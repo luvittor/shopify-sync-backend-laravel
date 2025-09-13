@@ -210,4 +210,68 @@ class ProductControllerIntegrationTest extends TestCase
         $syncResponse->assertStatus(200)
             ->assertJsonStructure(['synced', 'skipped', 'total']);
     }
+
+    #[Test]
+    public function clear_all_products_endpoint_works()
+    {
+        // Create some test products
+        Product::create([
+            'shopify_id' => '123',
+            'title' => 'Test Product 1',
+            'price' => 19.99,
+            'stock' => 10
+        ]);
+
+        Product::create([
+            'shopify_id' => '456',
+            'title' => 'Test Product 2', 
+            'price' => 29.99,
+            'stock' => 5
+        ]);
+
+        Product::create([
+            'shopify_id' => '789',
+            'title' => 'Test Product 3',
+            'price' => 39.99,
+            'stock' => 15
+        ]);
+
+        // Verify products exist
+        $this->assertEquals(3, Product::count());
+
+        // Make request to clear all products
+        $response = $this->deleteJson('/api/v1/products/clear');
+
+        // Verify response
+        $response->assertStatus(200)
+            ->assertJsonStructure(['message', 'cleared_count'])
+            ->assertJson([
+                'message' => 'All products cleared successfully',
+                'cleared_count' => 3
+            ]);
+
+        // Verify all products are cleared
+        $this->assertEquals(0, Product::count());
+    }
+
+    #[Test]
+    public function clear_all_products_handles_empty_database()
+    {
+        // Ensure no products exist
+        $this->assertEquals(0, Product::count());
+
+        // Make request to clear all products
+        $response = $this->deleteJson('/api/v1/products/clear');
+
+        // Verify response
+        $response->assertStatus(200)
+            ->assertJsonStructure(['message', 'cleared_count'])
+            ->assertJson([
+                'message' => 'All products cleared successfully',
+                'cleared_count' => 0
+            ]);
+
+        // Verify still no products
+        $this->assertEquals(0, Product::count());
+    }
 }

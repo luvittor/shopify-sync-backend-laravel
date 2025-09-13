@@ -6,4 +6,5 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('v1/products')->group(function () {
     Route::get('/', [ProductController::class, 'index']);
     Route::post('/sync', [ProductController::class, 'sync']);
+    Route::delete('/clear', [ProductController::class, 'clear']);
 });

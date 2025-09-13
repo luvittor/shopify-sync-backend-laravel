@@ -51,4 +51,26 @@ class ProductController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Clear all products
+     *
+     * @return JsonResponse
+     */
+    public function clear(): JsonResponse
+    {
+        try {
+            $count = $this->productRepository->clear();
+            
+            return response()->json([
+                'message' => 'All products cleared successfully',
+                'cleared_count' => $count
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to clear products',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

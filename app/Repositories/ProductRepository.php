@@ -36,4 +36,14 @@ class ProductRepository
             ->select('id', 'shopify_id', 'title', 'price', 'stock', 'created_at', 'updated_at')
             ->get();
     }
+
+    /**
+     * Clear all products
+     *
+     * @return int Number of cleared products
+     */
+    public function clear(): int
+    {
+        return Product::query()->delete();
+    }
 }

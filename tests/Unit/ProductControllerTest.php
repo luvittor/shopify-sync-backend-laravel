@@ -258,4 +258,97 @@ class ProductControllerTest extends TestCase
         $this->assertEquals(0, $responseData['skipped']);
         $this->assertEquals(0, $responseData['total']);
     }
+
+    #[Test]
+    public function clear_returns_successful_response()
+    {
+        // Arrange
+        $clearedCount = 5;
+
+        $this->mockProductRepository
+            ->shouldReceive('clear')
+            ->once()
+            ->andReturn($clearedCount);
+
+        // Act
+        $response = $this->controller->clear();
+
+        // Assert
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertEquals(200, $response->getStatusCode());
+        
+        $responseData = $response->getData(true);
+        $this->assertArrayHasKey('message', $responseData);
+        $this->assertArrayHasKey('cleared_count', $responseData);
+        $this->assertEquals('All products cleared successfully', $responseData['message']);
+        $this->assertEquals($clearedCount, $responseData['cleared_count']);
+    }
+
+    #[Test]
+    public function clear_returns_zero_count_when_no_products()
+    {
+        // Arrange
+        $clearedCount = 0;
+
+        $this->mockProductRepository
+            ->shouldReceive('clear')
+            ->once()
+            ->andReturn($clearedCount);
+
+        // Act
+        $response = $this->controller->clear();
+
+        // Assert
+        $this->assertEquals(200, $response->getStatusCode());
+        
+        $responseData = $response->getData(true);
+        $this->assertEquals('All products cleared successfully', $responseData['message']);
+        $this->assertEquals(0, $responseData['cleared_count']);
+    }
+
+    #[Test]
+    public function clear_handles_exception()
+    {
+        // Arrange
+        $exceptionMessage = 'Database connection failed';
+        
+        $this->mockProductRepository
+            ->shouldReceive('clear')
+            ->once()
+            ->andThrow(new \Exception($exceptionMessage));
+
+        // Act
+        $response = $this->controller->clear();
+
+        // Assert
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertEquals(500, $response->getStatusCode());
+        
+        $responseData = $response->getData(true);
+        $this->assertArrayHasKey('error', $responseData);
+        $this->assertArrayHasKey('message', $responseData);
+        $this->assertEquals('Failed to clear products', $responseData['error']);
+        $this->assertEquals($exceptionMessage, $responseData['message']);
+    }
+
+    #[Test]
+    public function clear_has_correct_json_structure()
+    {
+        // Arrange
+        $this->mockProductRepository
+            ->shouldReceive('clear')
+            ->once()
+            ->andReturn(3);
+
+        // Act
+        $response = $this->controller->clear();
+
+        // Assert
+        $responseData = $response->getData(true);
+        
+        $this->assertArrayHasKey('message', $responseData);
+        $this->assertArrayHasKey('cleared_count', $responseData);
+        $this->assertIsString($responseData['message']);
+        $this->assertIsInt($responseData['cleared_count']);
+    }
 }
