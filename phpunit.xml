@@ -19,6 +19,7 @@
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
+        <env name="APP_KEY" value="base64:nFJxGtKKaQk8TLN8xM5YoRBQGQ0KkNKKz8mxGKkKKaQ="/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="CACHE_STORE" value="array"/>
@@ -30,5 +31,9 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        
+        <env name="SHOPIFY_SHOP" value="test-shop"/>
+        <env name="SHOPIFY_ACCESS_TOKEN" value="test-token-123"/>
+        <env name="SHOPIFY_API_VERSION" value="2025-07"/>
     </php>
 </phpunit>
