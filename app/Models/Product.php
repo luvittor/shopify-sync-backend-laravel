@@ -17,4 +17,14 @@ class Product extends Model
         'stock',
         'shopify_id',
     ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'price' => 'float',
+        'stock' => 'integer',
+    ];
 }

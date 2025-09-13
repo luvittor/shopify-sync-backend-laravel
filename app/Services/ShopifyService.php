@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\Product;
+use App\Repositories\ProductRepository;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Support\Facades\Log;
@@ -10,22 +10,36 @@ use Illuminate\Support\Facades\Log;
 class ShopifyService
 {
     private Client $httpClient;
+    private ProductRepository $productRepository;
     private string $shopDomain;
     private string $accessToken;
     private string $apiVersion;
 
-    public function __construct()
+    /**
+     * @param Client|null $httpClient Optional HTTP client for dependency injection
+     * @param ProductRepository|null $productRepository Optional product repository for dependency injection
+     */
+    public function __construct(?Client $httpClient = null, ?ProductRepository $productRepository = null)
     {
-        $this->httpClient = new Client();
-        
         // Get Shopify credentials from environment
         $this->shopDomain = env('SHOPIFY_SHOP');
         $this->accessToken = env('SHOPIFY_ACCESS_TOKEN');
         $this->apiVersion = env('SHOPIFY_API_VERSION', '2025-07');
         
         if (!$this->shopDomain || !$this->accessToken) {
-            throw new \Exception('Shopify credentials are required. Please set SHOPIFY_SHOP and SHOPIFY_ACCESS_TOKEN environment variables.');
+            throw new \RuntimeException('Shopify credentials are required. Please set SHOPIFY_SHOP and SHOPIFY_ACCESS_TOKEN environment variables.');
         }
+
+        // Initialize HTTP client with default headers and timeout if not provided
+        $this->httpClient = $httpClient ?? new Client([
+            'headers' => [
+                'X-Shopify-Access-Token' => $this->accessToken,
+                'Content-Type' => 'application/json',
+            ],
+            'timeout' => 30,
+        ]);
+
+        $this->productRepository = $productRepository ?? new ProductRepository();
         
         Log::info('ShopifyService initialized', [
             'shop' => $this->shopDomain,
@@ -76,6 +90,16 @@ class ShopifyService
     }
 
     /**
+     * Build the Shopify products API URL
+     *
+     * @return string
+     */
+    private function buildProductsUrl(): string
+    {
+        return "https://{$this->shopDomain}.myshopify.com/admin/api/{$this->apiVersion}/products.json";
+    }
+
+    /**
      * Fetch products from Shopify Admin REST API
      * 
      * @return array Array of product data from Shopify
@@ -83,7 +107,7 @@ class ShopifyService
     private function fetchProducts(): array
     {
         try {
-            $url = "https://{$this->shopDomain}.myshopify.com/admin/api/{$this->apiVersion}/products.json";
+            $url = $this->buildProductsUrl();
             
             $response = $this->httpClient->get($url, [
                 'headers' => [
@@ -107,6 +131,27 @@ class ShopifyService
     }
 
     /**
+     * Parse variant data from a product
+     *
+     * @param array $product
+     * @return array{price: float, stock: int}
+     */
+    private function parseVariant(array $product): array
+    {
+        $price = 0.0;
+        $stock = 0;
+
+        // Get price from first variant if available
+        if (isset($product['variants']) && !empty($product['variants'])) {
+            $firstVariant = $product['variants'][0];
+            $price = (float) ($firstVariant['price'] ?? 0);
+            $stock = (int) ($firstVariant['inventory_quantity'] ?? 0);
+        }
+
+        return ['price' => $price, 'stock' => $stock];
+    }
+
+    /**
      * Upsert product into database by shopify_id
      * 
      * @param array $productData Product data from Shopify or mock
@@ -123,30 +168,20 @@ class ShopifyService
 
         // Extract relevant data from Shopify product structure
         $title = $productData['title'] ?? 'Untitled Product';
-        $price = 0;
-        $stock = 0;
+        $variant = $this->parseVariant($productData);
 
-        // Get price from first variant if available
-        if (isset($productData['variants']) && !empty($productData['variants'])) {
-            $firstVariant = $productData['variants'][0];
-            $price = (float) ($firstVariant['price'] ?? 0);
-            $stock = (int) ($firstVariant['inventory_quantity'] ?? 0);
-        }
-
-        Product::updateOrCreate(
-            ['shopify_id' => (string) $shopifyId],
-            [
-                'title' => $title,
-                'price' => $price,
-                'stock' => $stock,
-            ]
-        );
+        $this->productRepository->upsert([
+            'shopify_id' => (string) $shopifyId,
+            'title' => $title,
+            'price' => $variant['price'],
+            'stock' => $variant['stock'],
+        ]);
 
         Log::debug('Product upserted', [
             'shopify_id' => $shopifyId,
             'title' => $title,
-            'price' => $price,
-            'stock' => $stock
+            'price' => $variant['price'],
+            'stock' => $variant['stock']
         ]);
         
         return true;
