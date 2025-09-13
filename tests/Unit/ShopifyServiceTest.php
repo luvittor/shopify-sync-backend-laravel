@@ -43,9 +43,9 @@ class ShopifyServiceTest extends TestCase
     }
 
     #[Test]
-    public function it_syncs_products_successfully_in_real_mode()
+    public function it_syncs_products_successfully()
     {
-        // Since the service will be in real mode due to .env, we need to mock the HTTP client
+        // Mock the HTTP client to simulate Shopify API response
         $mockResponse = json_encode([
             'products' => [
                 [
@@ -77,7 +77,6 @@ class ShopifyServiceTest extends TestCase
 
         $result = $service->sync();
 
-        $this->assertEquals('real', $result['mode']);
         $this->assertEquals(1, $result['synced']);
         $this->assertEquals(0, $result['skipped']);
         $this->assertEquals(1, $result['total']);
@@ -140,7 +139,6 @@ class ShopifyServiceTest extends TestCase
 
         $result = $service->sync();
 
-        $this->assertEquals('real', $result['mode']);
         $this->assertEquals(0, $result['synced']);
         $this->assertEquals(0, $result['skipped']);
         $this->assertEquals(0, $result['total']);

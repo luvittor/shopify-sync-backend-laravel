@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Log;
 class ShopifyService
 {
     private Client $httpClient;
-    private bool $isRealMode;
     private string $shopDomain;
     private string $accessToken;
     private string $apiVersion;
@@ -19,31 +18,25 @@ class ShopifyService
     {
         $this->httpClient = new Client();
         
-        // Check for Shopify credentials in environment
-        $shop = env('SHOPIFY_SHOP');
-        $accessToken = env('SHOPIFY_ACCESS_TOKEN');
+        // Get Shopify credentials from environment
+        $this->shopDomain = env('SHOPIFY_SHOP');
+        $this->accessToken = env('SHOPIFY_ACCESS_TOKEN');
+        $this->apiVersion = env('SHOPIFY_API_VERSION', '2025-07');
         
-        if ($shop && $accessToken) {
-            $this->isRealMode = true;
-            $this->shopDomain = $shop;
-            $this->accessToken = $accessToken;
-            $this->apiVersion = env('SHOPIFY_API_VERSION', '2025-07');
-            
-            Log::info('ShopifyService initialized in REAL mode', [
-                'shop' => $this->shopDomain,
-                'api_version' => $this->apiVersion
-            ]);
-        } else {
-            $this->isRealMode = false;
-            
-            Log::info('ShopifyService initialized in MOCK mode - missing credentials');
+        if (!$this->shopDomain || !$this->accessToken) {
+            throw new \Exception('Shopify credentials are required. Please set SHOPIFY_SHOP and SHOPIFY_ACCESS_TOKEN environment variables.');
         }
+        
+        Log::info('ShopifyService initialized', [
+            'shop' => $this->shopDomain,
+            'api_version' => $this->apiVersion
+        ]);
     }
 
     /**
-     * Sync products from Shopify (real API or mock data)
+     * Sync products from Shopify API
      * 
-     * @return array JSON response with mode, sync count, and skip count
+     * @return array JSON response with sync count and skip count
      */
     public function sync(): array
     {
@@ -62,14 +55,12 @@ class ShopifyService
             }
 
             Log::info('Product sync completed', [
-                'mode' => $this->isRealMode ? 'real' : 'mock',
                 'synced_count' => $syncedCount,
                 'skipped_count' => $skippedCount,
                 'total_processed' => count($products)
             ]);
 
             return [
-                'mode' => $this->isRealMode ? 'real' : 'mock',
                 'synced' => $syncedCount,
                 'skipped' => $skippedCount,
                 'total' => count($products)
@@ -77,7 +68,6 @@ class ShopifyService
 
         } catch (\Exception $e) {
             Log::error('Product sync failed', [
-                'mode' => $this->isRealMode ? 'real' : 'mock',
                 'error' => $e->getMessage()
             ]);
 
@@ -86,25 +76,11 @@ class ShopifyService
     }
 
     /**
-     * Fetch products from either Shopify API or mock file
-     * 
-     * @return array Array of product data
-     */
-    private function fetchProducts(): array
-    {
-        if ($this->isRealMode) {
-            return $this->fetchProductsFromShopify();
-        } else {
-            return $this->fetchProductsFromMock();
-        }
-    }
-
-    /**
      * Fetch products from Shopify Admin REST API
      * 
      * @return array Array of product data from Shopify
      */
-    private function fetchProductsFromShopify(): array
+    private function fetchProducts(): array
     {
         try {
             $url = "https://{$this->shopDomain}.myshopify.com/admin/api/{$this->apiVersion}/products.json";
@@ -128,34 +104,6 @@ class ShopifyService
             
             throw new \Exception('Failed to fetch products from Shopify: ' . $e->getMessage());
         }
-    }
-
-    /**
-     * Fetch products from local mock JSON file
-     * 
-     * @return array Array of product data from mock file
-     */
-    private function fetchProductsFromMock(): array
-    {
-        $mockFilePath = resource_path('mock/mock_products.json');
-        
-        if (!file_exists($mockFilePath)) {
-            Log::warning('Mock products file not found', ['path' => $mockFilePath]);
-            return [];
-        }
-
-        $jsonContent = file_get_contents($mockFilePath);
-        $data = json_decode($jsonContent, true);
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            Log::error('Invalid JSON in mock products file', [
-                'path' => $mockFilePath,
-                'error' => json_last_error_msg()
-            ]);
-            return [];
-        }
-
-        return $data['products'] ?? [];
     }
 
     /**
