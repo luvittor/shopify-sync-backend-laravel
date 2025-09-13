@@ -244,10 +244,10 @@ class ProductControllerIntegrationTest extends TestCase
 
         // Verify response
         $response->assertStatus(200)
-            ->assertJsonStructure(['message', 'cleared_count'])
+            ->assertJsonStructure(['message', 'cleared'])
             ->assertJson([
                 'message' => 'All products cleared successfully',
-                'cleared_count' => 3
+                'cleared' => 3
             ]);
 
         // Verify all products are cleared
@@ -265,10 +265,10 @@ class ProductControllerIntegrationTest extends TestCase
 
         // Verify response
         $response->assertStatus(200)
-            ->assertJsonStructure(['message', 'cleared_count'])
+            ->assertJsonStructure(['message', 'cleared'])
             ->assertJson([
                 'message' => 'All products cleared successfully',
-                'cleared_count' => 0
+                'cleared' => 0
             ]);
 
         // Verify still no products

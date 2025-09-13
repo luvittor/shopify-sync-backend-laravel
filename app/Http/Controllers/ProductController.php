@@ -64,7 +64,7 @@ class ProductController extends Controller
             
             return response()->json([
                 'message' => 'All products cleared successfully',
-                'cleared_count' => $count
+                'cleared' => $count
             ]);
         } catch (\Exception $e) {
             return response()->json([

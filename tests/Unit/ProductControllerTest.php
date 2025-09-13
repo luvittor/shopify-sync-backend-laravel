@@ -279,9 +279,9 @@ class ProductControllerTest extends TestCase
         
         $responseData = $response->getData(true);
         $this->assertArrayHasKey('message', $responseData);
-        $this->assertArrayHasKey('cleared_count', $responseData);
+        $this->assertArrayHasKey('cleared', $responseData);
         $this->assertEquals('All products cleared successfully', $responseData['message']);
-        $this->assertEquals($clearedCount, $responseData['cleared_count']);
+        $this->assertEquals($clearedCount, $responseData['cleared']);
     }
 
     #[Test]
@@ -303,7 +303,7 @@ class ProductControllerTest extends TestCase
         
         $responseData = $response->getData(true);
         $this->assertEquals('All products cleared successfully', $responseData['message']);
-        $this->assertEquals(0, $responseData['cleared_count']);
+        $this->assertEquals(0, $responseData['cleared']);
     }
 
     #[Test]
@@ -347,8 +347,8 @@ class ProductControllerTest extends TestCase
         $responseData = $response->getData(true);
         
         $this->assertArrayHasKey('message', $responseData);
-        $this->assertArrayHasKey('cleared_count', $responseData);
+        $this->assertArrayHasKey('cleared', $responseData);
         $this->assertIsString($responseData['message']);
-        $this->assertIsInt($responseData['cleared_count']);
+        $this->assertIsInt($responseData['cleared']);
     }
 }
