@@ -68,12 +68,8 @@ class ShopifyServiceTest extends TestCase
         Log::shouldReceive('info')->times(2); // Constructor + sync completion
         Log::shouldReceive('debug')->once(); // Product upserted
 
-        // Create service and inject mocked client
-        $service = new ShopifyService();
-        $reflection = new \ReflectionClass($service);
-        $httpClient = $reflection->getProperty('httpClient');
-        $httpClient->setAccessible(true);
-        $httpClient->setValue($service, $client);
+        // Create service with mocked client via constructor
+        $service = new ShopifyService($client);
 
         $result = $service->sync();
 
@@ -104,11 +100,7 @@ class ShopifyServiceTest extends TestCase
         Log::shouldReceive('info')->once(); // Constructor
         Log::shouldReceive('error')->twice(); // API error + sync failed
 
-        $service = new ShopifyService();
-        $reflection = new \ReflectionClass($service);
-        $httpClient = $reflection->getProperty('httpClient');
-        $httpClient->setAccessible(true);
-        $httpClient->setValue($service, $client);
+        $service = new ShopifyService($client);
 
         $this->expectException(\Exception::class);
         $this->expectExceptionMessage('Product sync failed:');
@@ -131,11 +123,7 @@ class ShopifyServiceTest extends TestCase
 
         Log::shouldReceive('info')->times(2); // Constructor + sync completion
 
-        $service = new ShopifyService();
-        $reflection = new \ReflectionClass($service);
-        $httpClient = $reflection->getProperty('httpClient');
-        $httpClient->setAccessible(true);
-        $httpClient->setValue($service, $client);
+        $service = new ShopifyService($client);
 
         $result = $service->sync();
 
@@ -177,11 +165,7 @@ class ShopifyServiceTest extends TestCase
         Log::shouldReceive('info')->times(2); // Constructor + sync completion
         Log::shouldReceive('debug')->once(); // Product upserted
 
-        $service = new ShopifyService();
-        $reflection = new \ReflectionClass($service);
-        $httpClient = $reflection->getProperty('httpClient');
-        $httpClient->setAccessible(true);
-        $httpClient->setValue($service, $client);
+        $service = new ShopifyService($client);
 
         $initialCount = Product::count();
         $result = $service->sync();
@@ -222,11 +206,7 @@ class ShopifyServiceTest extends TestCase
         Log::shouldReceive('info')->times(2); // Constructor + sync completion
         Log::shouldReceive('debug')->once(); // Product upserted
 
-        $service = new ShopifyService();
-        $reflection = new \ReflectionClass($service);
-        $httpClient = $reflection->getProperty('httpClient');
-        $httpClient->setAccessible(true);
-        $httpClient->setValue($service, $client);
+        $service = new ShopifyService($client);
 
         $result = $service->sync();
 
@@ -266,11 +246,7 @@ class ShopifyServiceTest extends TestCase
         Log::shouldReceive('info')->times(2); // Constructor + sync completion
         Log::shouldReceive('debug')->once(); // Product upserted
 
-        $service = new ShopifyService();
-        $reflection = new \ReflectionClass($service);
-        $httpClient = $reflection->getProperty('httpClient');
-        $httpClient->setAccessible(true);
-        $httpClient->setValue($service, $client);
+        $service = new ShopifyService($client);
 
         $result = $service->sync();
 
@@ -314,11 +290,7 @@ class ShopifyServiceTest extends TestCase
             ->with('Product data missing ID, skipping', \Mockery::type('array'));
         Log::shouldReceive('debug')->once(); // Only valid product
 
-        $service = new ShopifyService();
-        $reflection = new \ReflectionClass($service);
-        $httpClient = $reflection->getProperty('httpClient');
-        $httpClient->setAccessible(true);
-        $httpClient->setValue($service, $client);
+        $service = new ShopifyService($client);
 
         $result = $service->sync();
 
@@ -375,11 +347,7 @@ class ShopifyServiceTest extends TestCase
         Log::shouldReceive('warning')->times(2); // Two invalid products
         Log::shouldReceive('debug')->times(3); // Three valid products
 
-        $service = new ShopifyService();
-        $reflection = new \ReflectionClass($service);
-        $httpClient = $reflection->getProperty('httpClient');
-        $httpClient->setAccessible(true);
-        $httpClient->setValue($service, $client);
+        $service = new ShopifyService($client);
 
         $result = $service->sync();
 
