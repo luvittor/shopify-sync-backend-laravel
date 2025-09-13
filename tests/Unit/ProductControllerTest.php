@@ -138,6 +138,31 @@ class ProductControllerTest extends TestCase
     }
 
     #[Test]
+    public function index_handles_exception()
+    {
+        // Arrange
+        $exceptionMessage = 'Database connection failed';
+        
+        $this->mockProductRepository
+            ->shouldReceive('list')
+            ->once()
+            ->andThrow(new \Exception($exceptionMessage));
+
+        // Act
+        $response = $this->controller->index();
+
+        // Assert
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertEquals(500, $response->getStatusCode());
+        
+        $responseData = $response->getData(true);
+        $this->assertArrayHasKey('error', $responseData);
+        $this->assertArrayHasKey('message', $responseData);
+        $this->assertEquals('Failed to fetch products', $responseData['error']);
+        $this->assertEquals($exceptionMessage, $responseData['message']);
+    }
+
+    #[Test]
     public function sync_returns_successful_response()
     {
         // Arrange
@@ -187,7 +212,7 @@ class ProductControllerTest extends TestCase
         $responseData = $response->getData(true);
         $this->assertArrayHasKey('error', $responseData);
         $this->assertArrayHasKey('message', $responseData);
-        $this->assertEquals('Sync failed', $responseData['error']);
+        $this->assertEquals('Failed to sync products', $responseData['error']);
         $this->assertEquals($exceptionMessage, $responseData['message']);
     }
 
@@ -228,7 +253,7 @@ class ProductControllerTest extends TestCase
         $this->assertEquals(500, $response->getStatusCode());
         
         $responseData = $response->getData(true);
-        $this->assertEquals('Sync failed', $responseData['error']);
+        $this->assertEquals('Failed to sync products', $responseData['error']);
         $this->assertEquals('Configuration error', $responseData['message']);
     }
 

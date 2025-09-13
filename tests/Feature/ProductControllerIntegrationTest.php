@@ -157,7 +157,7 @@ class ProductControllerIntegrationTest extends TestCase
                 'message'
             ])
             ->assertJson([
-                'error' => 'Sync failed',
+                'error' => 'Failed to sync products',
                 'message' => 'Shopify API is down'
             ]);
     }

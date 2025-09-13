@@ -25,12 +25,19 @@ class ProductController extends Controller
      */
     public function index(): JsonResponse
     {
-        $products = $this->productRepository->list();
-        
-        return response()->json([
-            'products' => $products,
-            'count' => $products->count()
-        ]);
+        try {
+            $products = $this->productRepository->list();
+            
+            return response()->json([
+                'products' => $products,
+                'count' => $products->count()
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch products',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -46,7 +53,7 @@ class ProductController extends Controller
             return response()->json($result);
         } catch (\Exception $e) {
             return response()->json([
-                'error' => 'Sync failed',
+                'error' => 'Failed to sync products',
                 'message' => $e->getMessage()
             ], 500);
         }

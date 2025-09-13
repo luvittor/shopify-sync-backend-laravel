@@ -81,11 +81,11 @@ class ShopifyService
             ];
 
         } catch (\Exception $e) {
-            Log::error('Product sync failed', [
+            Log::error('Failed to sync products', [
                 'error' => $e->getMessage()
             ]);
 
-            throw new \Exception('Product sync failed: ' . $e->getMessage());
+            throw new \Exception('Failed to sync products: ' . $e->getMessage());
         }
     }
 

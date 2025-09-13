@@ -98,12 +98,12 @@ class ShopifyServiceTest extends TestCase
         $client = new Client(['handler' => $handlerStack]);
 
         Log::shouldReceive('info')->once(); // Constructor
-        Log::shouldReceive('error')->twice(); // API error + sync failed
+        Log::shouldReceive('error')->twice(); // API error + sync
 
         $service = new ShopifyService($client);
 
         $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Product sync failed:');
+        $this->expectExceptionMessage('Failed to sync products:');
 
         $service->sync();
     }
