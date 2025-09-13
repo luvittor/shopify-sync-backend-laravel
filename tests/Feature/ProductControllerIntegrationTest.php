@@ -47,7 +47,7 @@ class ProductControllerIntegrationTest extends TestCase
         ]);
 
         // Make request to the API endpoint
-        $response = $this->getJson('/api/products');
+        $response = $this->getJson('/api/v1/products');
 
         $response->assertStatus(200)
             ->assertJsonStructure([
@@ -73,7 +73,7 @@ class ProductControllerIntegrationTest extends TestCase
     #[Test]
     public function get_products_endpoint_returns_empty_list_when_no_products()
     {
-        $response = $this->getJson('/api/products');
+        $response = $this->getJson('/api/v1/products');
 
         $response->assertStatus(200)
             ->assertJson([
@@ -114,7 +114,7 @@ class ProductControllerIntegrationTest extends TestCase
         $this->app->instance(ProductRepository::class, $productRepository);
 
         // Make request to sync endpoint
-        $response = $this->postJson('/api/products/sync');
+        $response = $this->postJson('/api/v1/products/sync');
 
         $response->assertStatus(200)
             ->assertJsonStructure([
@@ -149,7 +149,7 @@ class ProductControllerIntegrationTest extends TestCase
         $this->app->instance(ShopifyService::class, $mockService);
 
         // Make request to sync endpoint
-        $response = $this->postJson('/api/products/sync');
+        $response = $this->postJson('/api/v1/products/sync');
 
         $response->assertStatus(500)
             ->assertJsonStructure([
@@ -180,7 +180,7 @@ class ProductControllerIntegrationTest extends TestCase
         $this->app->instance(ProductRepository::class, $productRepository);
 
         // Make request
-        $response = $this->getJson('/api/products');
+        $response = $this->getJson('/api/v1/products');
 
         // Verify the injected repository was used
         $response->assertStatus(200);
@@ -191,7 +191,7 @@ class ProductControllerIntegrationTest extends TestCase
     public function api_endpoints_maintain_consistent_response_format()
     {
         // Test products endpoint response format
-        $productsResponse = $this->getJson('/api/products');
+        $productsResponse = $this->getJson('/api/v1/products');
         $productsResponse->assertStatus(200)
             ->assertJsonStructure(['products', 'count']);
 
@@ -206,7 +206,7 @@ class ProductControllerIntegrationTest extends TestCase
         $this->app->instance(ShopifyService::class, $mockService);
 
         // Test sync endpoint response format
-        $syncResponse = $this->postJson('/api/products/sync');
+        $syncResponse = $this->postJson('/api/v1/products/sync');
         $syncResponse->assertStatus(200)
             ->assertJsonStructure(['synced', 'skipped', 'total']);
     }
