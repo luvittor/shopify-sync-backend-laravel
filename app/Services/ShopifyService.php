@@ -43,27 +43,36 @@ class ShopifyService
     /**
      * Sync products from Shopify (real API or mock data)
      * 
-     * @return array JSON response with mode and sync count
+     * @return array JSON response with mode, sync count, and skip count
      */
     public function sync(): array
     {
         try {
             $products = $this->fetchProducts();
             $syncedCount = 0;
+            $skippedCount = 0;
 
             foreach ($products as $productData) {
-                $this->upsertProduct($productData);
-                $syncedCount++;
+                $wasProcessed = $this->upsertProduct($productData);
+                if ($wasProcessed) {
+                    $syncedCount++;
+                } else {
+                    $skippedCount++;
+                }
             }
 
             Log::info('Product sync completed', [
                 'mode' => $this->isRealMode ? 'real' : 'mock',
-                'synced_count' => $syncedCount
+                'synced_count' => $syncedCount,
+                'skipped_count' => $skippedCount,
+                'total_processed' => count($products)
             ]);
 
             return [
                 'mode' => $this->isRealMode ? 'real' : 'mock',
-                'synced' => $syncedCount
+                'synced' => $syncedCount,
+                'skipped' => $skippedCount,
+                'total' => count($products)
             ];
 
         } catch (\Exception $e) {
@@ -153,14 +162,15 @@ class ShopifyService
      * Upsert product into database by shopify_id
      * 
      * @param array $productData Product data from Shopify or mock
+     * @return bool True if product was successfully processed, false if skipped
      */
-    private function upsertProduct(array $productData): void
+    private function upsertProduct(array $productData): bool
     {
         $shopifyId = $productData['id'] ?? null;
         
         if (!$shopifyId) {
             Log::warning('Product data missing ID, skipping', ['product' => $productData]);
-            return;
+            return false;
         }
 
         // Extract relevant data from Shopify product structure
@@ -190,5 +200,7 @@ class ShopifyService
             'price' => $price,
             'stock' => $stock
         ]);
+        
+        return true;
     }
 }
