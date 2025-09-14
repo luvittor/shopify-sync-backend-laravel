@@ -157,6 +157,78 @@ class ProductControllerIntegrationTest extends TestCase
         ]);
     }
 
+
+    #[Test]
+    public function sync_endpoint_updates_existing_products_with_mocked_shopify_service()
+    {
+        // Create initial product
+        $oldProductData = [
+            'shopify_id' => '999888777',
+            'title' => 'Old Product Title',
+            'price' => 49.99,
+            'stock' => 20
+        ];
+        Product::create($oldProductData);
+
+        // New data to update the existing product
+        $newProductData = [
+            'shopify_id' => '999888777',
+            'title' => 'Updated Product Title',
+            'price' => 59.99,
+            'stock' => 25
+        ];
+
+        // Mock Shopify API response with updated product data
+        $mockResponse = json_encode([
+            'products' => [
+                [
+                    'id' => $newProductData['shopify_id'],
+                    'title' => $newProductData['title'],
+                    'variants' => [
+                        [
+                            'price' => $newProductData['price'],
+                            'inventory_quantity' => $newProductData['stock']
+                        ]
+                    ]
+                ]
+            ]
+        ]);
+
+        $mock = new MockHandler([
+            new Response(200, [], $mockResponse)
+        ]);
+
+        $handlerStack = HandlerStack::create($mock);
+        $client = new Client(['handler' => $handlerStack]);
+
+        // Create service with mocked HTTP client
+        $shopifyService = new ShopifyService($client);
+        $productRepository = new ProductRepository();
+
+        // Bind the mocked service to the container
+        $this->app->instance(ShopifyService::class, $shopifyService);
+        $this->app->instance(ProductRepository::class, $productRepository);
+
+        // Make request to sync endpoint
+        $response = $this->postJson('/api/v1/products/sync');
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'synced' => 1,
+                'skipped' => 0,
+                'total' => 1
+            ]);
+
+        // Verify product was updated
+        $this->assertDatabaseHas('products', $newProductData);
+
+        // Verify old data no longer exists
+        $this->assertDatabaseMissing('products', $oldProductData);
+
+        // Ensure only one product exists
+        $this->assertEquals(1, Product::count());
+    }
+
     #[Test]
     public function sync_endpoint_handles_service_errors_gracefully()
     {

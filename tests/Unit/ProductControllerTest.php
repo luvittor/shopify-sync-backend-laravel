@@ -3,21 +3,17 @@
 namespace Tests\Unit;
 
 use App\Http\Controllers\ProductController;
-use App\Models\Product;
 use App\Repositories\ProductRepository;
 use App\Services\ShopifyService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Collection;
 use Mockery;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ProductControllerTest extends TestCase
 {
-    use RefreshDatabase;
 
     private $mockProductRepository;
     private $mockShopifyService;
@@ -93,12 +89,10 @@ class ProductControllerTest extends TestCase
     public function index_returns_empty_products_list()
     {
         // Arrange
-        $emptyProducts = collect([]);
-
         $mockPaginator = Mockery::mock(LengthAwarePaginator::class);
         $mockPaginator->shouldReceive('items')->andReturn([]);
         $mockPaginator->shouldReceive('currentPage')->andReturn(1);
-        $mockPaginator->shouldReceive('perPage')->andReturn(15);
+        $mockPaginator->shouldReceive('perPage')->andReturn(10);
         $mockPaginator->shouldReceive('total')->andReturn(0);
         $mockPaginator->shouldReceive('lastPage')->andReturn(1);
         $mockPaginator->shouldReceive('firstItem')->andReturn(null);
@@ -106,12 +100,12 @@ class ProductControllerTest extends TestCase
         $mockPaginator->shouldReceive('hasMorePages')->andReturn(false);
         $mockPaginator->shouldReceive('previousPageUrl')->andReturn(null);
         $mockPaginator->shouldReceive('nextPageUrl')->andReturn(null);
-        $mockPaginator->shouldReceive('url')->with(1)->andReturn('http://localhost/api/v1/products?page=1');
+        $mockPaginator->shouldReceive('url')->andReturn('http://localhost/api/v1/products?page=1');
 
         $this->mockProductRepository
             ->shouldReceive('listPaginated')
             ->once()
-            ->with(15)
+            ->with(10)  // Default per_page is 10, not 15
             ->andReturn($mockPaginator);
 
         $request = new Request();
@@ -149,7 +143,7 @@ class ProductControllerTest extends TestCase
         $mockPaginator = Mockery::mock(LengthAwarePaginator::class);
         $mockPaginator->shouldReceive('items')->andReturn($products->toArray());
         $mockPaginator->shouldReceive('currentPage')->andReturn(1);
-        $mockPaginator->shouldReceive('perPage')->andReturn(15);
+        $mockPaginator->shouldReceive('perPage')->andReturn(10);
         $mockPaginator->shouldReceive('total')->andReturn(1);
         $mockPaginator->shouldReceive('lastPage')->andReturn(1);
         $mockPaginator->shouldReceive('firstItem')->andReturn(1);
@@ -157,12 +151,12 @@ class ProductControllerTest extends TestCase
         $mockPaginator->shouldReceive('hasMorePages')->andReturn(false);
         $mockPaginator->shouldReceive('previousPageUrl')->andReturn(null);
         $mockPaginator->shouldReceive('nextPageUrl')->andReturn(null);
-        $mockPaginator->shouldReceive('url')->with(1)->andReturn('http://localhost/api/v1/products?page=1');
+        $mockPaginator->shouldReceive('url')->andReturn('http://localhost/api/v1/products?page=1');
 
         $this->mockProductRepository
             ->shouldReceive('listPaginated')
             ->once()
-            ->with(15)
+            ->with(10)  // Default per_page is 10, not 15
             ->andReturn($mockPaginator);
 
         $request = new Request();
@@ -429,5 +423,149 @@ class ProductControllerTest extends TestCase
         $this->assertArrayHasKey('cleared', $responseData);
         $this->assertIsString($responseData['message']);
         $this->assertIsInt($responseData['cleared']);
+    }
+
+    #[Test]
+    public function index_handles_per_page_less_than_one()
+    {
+        // Arrange
+        $mockPaginator = Mockery::mock(LengthAwarePaginator::class);
+        $mockPaginator->shouldReceive('items')->andReturn([]);
+        $mockPaginator->shouldReceive('currentPage')->andReturn(1);
+        $mockPaginator->shouldReceive('perPage')->andReturn(10); // Should default to 10
+        $mockPaginator->shouldReceive('total')->andReturn(0);
+        $mockPaginator->shouldReceive('lastPage')->andReturn(1);
+        $mockPaginator->shouldReceive('firstItem')->andReturn(null);
+        $mockPaginator->shouldReceive('lastItem')->andReturn(null);
+        $mockPaginator->shouldReceive('hasMorePages')->andReturn(false);
+        $mockPaginator->shouldReceive('previousPageUrl')->andReturn(null);
+        $mockPaginator->shouldReceive('nextPageUrl')->andReturn(null);
+        $mockPaginator->shouldReceive('url')->andReturn('http://localhost/api/v1/products?page=1');
+
+        $this->mockProductRepository
+            ->shouldReceive('listPaginated')
+            ->with(10) // Should be corrected to 10, not the invalid value
+            ->once()
+            ->andReturn($mockPaginator);
+
+        $request = new Request(['per_page' => -5]); // Invalid: less than 1
+
+        // Act
+        $response = $this->controller->index($request);
+
+        // Assert
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertEquals(200, $response->getStatusCode());
+        
+        $responseData = $response->getData(true);
+        $this->assertEquals(10, $responseData['pagination']['per_page']); // Should be corrected to 10
+    }
+
+    #[Test]
+    public function index_handles_per_page_greater_than_hundred()
+    {
+        // Arrange
+        $mockPaginator = Mockery::mock(LengthAwarePaginator::class);
+        $mockPaginator->shouldReceive('items')->andReturn([]);
+        $mockPaginator->shouldReceive('currentPage')->andReturn(1);
+        $mockPaginator->shouldReceive('perPage')->andReturn(100); // Should be capped at 100
+        $mockPaginator->shouldReceive('total')->andReturn(0);
+        $mockPaginator->shouldReceive('lastPage')->andReturn(1);
+        $mockPaginator->shouldReceive('firstItem')->andReturn(null);
+        $mockPaginator->shouldReceive('lastItem')->andReturn(null);
+        $mockPaginator->shouldReceive('hasMorePages')->andReturn(false);
+        $mockPaginator->shouldReceive('previousPageUrl')->andReturn(null);
+        $mockPaginator->shouldReceive('nextPageUrl')->andReturn(null);
+        $mockPaginator->shouldReceive('url')->andReturn('http://localhost/api/v1/products?page=1');
+
+        $this->mockProductRepository
+            ->shouldReceive('listPaginated')
+            ->with(100) // Should be capped at 100, not the invalid value
+            ->once()
+            ->andReturn($mockPaginator);
+
+        $request = new Request(['per_page' => 150]); // Invalid: greater than 100
+
+        // Act
+        $response = $this->controller->index($request);
+
+        // Assert
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertEquals(200, $response->getStatusCode());
+        
+        $responseData = $response->getData(true);
+        $this->assertEquals(100, $responseData['pagination']['per_page']); // Should be capped at 100
+    }
+
+    #[Test]
+    public function index_handles_per_page_zero()
+    {
+        // Arrange
+        $mockPaginator = Mockery::mock(LengthAwarePaginator::class);
+        $mockPaginator->shouldReceive('items')->andReturn([]);
+        $mockPaginator->shouldReceive('currentPage')->andReturn(1);
+        $mockPaginator->shouldReceive('perPage')->andReturn(10); // Should default to 10
+        $mockPaginator->shouldReceive('total')->andReturn(0);
+        $mockPaginator->shouldReceive('lastPage')->andReturn(1);
+        $mockPaginator->shouldReceive('firstItem')->andReturn(null);
+        $mockPaginator->shouldReceive('lastItem')->andReturn(null);
+        $mockPaginator->shouldReceive('hasMorePages')->andReturn(false);
+        $mockPaginator->shouldReceive('previousPageUrl')->andReturn(null);
+        $mockPaginator->shouldReceive('nextPageUrl')->andReturn(null);
+        $mockPaginator->shouldReceive('url')->andReturn('http://localhost/api/v1/products?page=1');
+
+        $this->mockProductRepository
+            ->shouldReceive('listPaginated')
+            ->with(10) // Should be corrected to 10, not 0
+            ->once()
+            ->andReturn($mockPaginator);
+
+        $request = new Request(['per_page' => 0]); // Invalid: zero
+
+        // Act
+        $response = $this->controller->index($request);
+
+        // Assert
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertEquals(200, $response->getStatusCode());
+        
+        $responseData = $response->getData(true);
+        $this->assertEquals(10, $responseData['pagination']['per_page']); // Should be corrected to 10
+    }
+
+    #[Test]
+    public function index_handles_valid_per_page_values()
+    {
+        // Arrange
+        $mockPaginator = Mockery::mock(LengthAwarePaginator::class);
+        $mockPaginator->shouldReceive('items')->andReturn([]);
+        $mockPaginator->shouldReceive('currentPage')->andReturn(1);
+        $mockPaginator->shouldReceive('perPage')->andReturn(25); // Should use the valid value
+        $mockPaginator->shouldReceive('total')->andReturn(0);
+        $mockPaginator->shouldReceive('lastPage')->andReturn(1);
+        $mockPaginator->shouldReceive('firstItem')->andReturn(null);
+        $mockPaginator->shouldReceive('lastItem')->andReturn(null);
+        $mockPaginator->shouldReceive('hasMorePages')->andReturn(false);
+        $mockPaginator->shouldReceive('previousPageUrl')->andReturn(null);
+        $mockPaginator->shouldReceive('nextPageUrl')->andReturn(null);
+        $mockPaginator->shouldReceive('url')->andReturn('http://localhost/api/v1/products?page=1');
+
+        $this->mockProductRepository
+            ->shouldReceive('listPaginated')
+            ->with(25) // Should use the exact valid value
+            ->once()
+            ->andReturn($mockPaginator);
+
+        $request = new Request(['per_page' => 25]); // Valid value
+
+        // Act
+        $response = $this->controller->index($request);
+
+        // Assert
+        $this->assertInstanceOf(JsonResponse::class, $response);
+        $this->assertEquals(200, $response->getStatusCode());
+        
+        $responseData = $response->getData(true);
+        $this->assertEquals(25, $responseData['pagination']['per_page']); // Should use the exact value
     }
 }
