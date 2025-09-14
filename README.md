@@ -1,11 +1,12 @@
-# Shopify Sync Backend
+# Shopify Sync Laravel Backend
 
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue)](https://www.php.net/)
 [![Laravel](https://img.shields.io/badge/Laravel-12.0-red)](https://laravel.com/)
 [![SQLite](https://img.shields.io/badge/DB-SQLite-lightgrey)](https://www.sqlite.org/)
 
 A Laravel backend service to synchronize products from Shopify.
-This project was developed as part of a **technical assessment**: synchronize Shopify products using **Laravel** for the backend and **Vue.js** for the frontend (separate repo).
+
+This project was developed as part of a **technical assessment**: synchronize Shopify products using **Laravel** for the backend and **Vue.js** for the frontend (visit here: [shopify-sync-frontend-vue](https://github.com/luvittor/shopify-sync-frontend-vue)).
 
 Tests don’t need Shopify and simulate the API.
 
