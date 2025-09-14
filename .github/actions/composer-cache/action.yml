@@ -1,0 +1,12 @@
+name: Composer Cache Directory
+description: Outputs Composer cache directory
+outputs:
+  dir:
+    description: Composer cache directory
+    value: ${{ steps.cache-dir.outputs.dir }}
+runs:
+  using: composite
+  steps:
+    - id: cache-dir
+      run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+      shell: bash
