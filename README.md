@@ -89,6 +89,13 @@ I considered applying CQRS/DDD, but kept the project intentionally **simple and 
 * `ProductRepository` abstracts database access.
 * `Product` model represents the product entity.
 
+### GitHub Actions
+
+A GitHub Actions workflows are included to deploy, test and audit the application:
+* [audit.yml](.github/workflows/audit.yml)
+* [deploy.yml](.github/workflows/deploy.yml)
+* [tests.yml](.github/workflows/tests.yml)
+
 ## Credits
 
 Created for technical assessment by **Luciano Vettoretti**.

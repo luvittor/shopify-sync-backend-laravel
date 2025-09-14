@@ -1,0 +1,45 @@
+name: Audit Laravel Application
+
+on:
+  push:
+  schedule:
+    # Every Monday at midnight (UTC)
+    - cron: '0 0 * * 1'
+  workflow_dispatch:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      # 1) Check out your code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2) Set up PHP & Composer
+      - name: Setup PHP & Composer
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer
+
+      # 3) Grab Composer's cache directory
+      - name: Get Composer cache dir
+        id: composer-cache
+        uses: ./.github/actions/composer-cache
+
+      # 4) Cache Composer downloads between runs
+      - name: Cache Composer downloads
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      # 5) Install only production deps (skip scripts & dev-packages)
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress --no-scripts --no-dev
+
+      # 6) Run the security audit (machine-readable JSON)
+      - name: Run Composer Audit
+        run: composer audit --format=json
