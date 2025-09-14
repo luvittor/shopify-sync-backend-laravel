@@ -31,10 +31,22 @@ Tests don’t need Shopify and simulate the API.
    * `SHOPIFY_SHOP` – Your Shopify store subdomain (without `.myshopify.com`)
    * `SHOPIFY_ACCESS_TOKEN` – Your Shopify Admin API access token
    * `SHOPIFY_API_VERSION` – Shopify API version (default: 2025-07)
+   * `CORS_ALLOWED_ORIGINS` – Allowed origins for CORS ([see below](#env-cors_allowed_origins))
 4. Generate the application key with `php artisan key:generate`
 5. Run migrations with `php artisan migrate`
 6. Run the application with `php artisan serve`
 7. Access the API at `http://localhost:8000/api/v1/products` or use the Postman collection in `docs/postman/`.
+
+### Env CORS_ALLOWED_ORIGINS
+
+Set `CORS_ALLOWED_ORIGINS` with your frontend URLs separated by commas, e.g. `https://www.example.com,https://example.com` or `*` to allow all origins (recommended only for development, **NOT production**).
+
+Note: If you change `CORS_ALLOWED_ORIGINS` after initial setup, you may need to clear the configuration cache to apply the changes:
+
+```bash
+php artisan config:clear
+php artisan cache:clear
+```
 
 ## API Endpoints
 
