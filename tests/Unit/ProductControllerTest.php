@@ -8,6 +8,8 @@ use App\Repositories\ProductRepository;
 use App\Services\ShopifyService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Mockery;
 use PHPUnit\Framework\Attributes\Test;
@@ -51,23 +53,40 @@ class ProductControllerTest extends TestCase
             ['id' => 2, 'shopify_id' => '456', 'title' => 'Product 2', 'price' => 29.99, 'stock' => 5],
         ]);
 
+        $mockPaginator = Mockery::mock(LengthAwarePaginator::class);
+        $mockPaginator->shouldReceive('items')->andReturn($products->toArray());
+        $mockPaginator->shouldReceive('currentPage')->andReturn(1);
+        $mockPaginator->shouldReceive('perPage')->andReturn(15);
+        $mockPaginator->shouldReceive('total')->andReturn(2);
+        $mockPaginator->shouldReceive('lastPage')->andReturn(1);
+        $mockPaginator->shouldReceive('firstItem')->andReturn(1);
+        $mockPaginator->shouldReceive('lastItem')->andReturn(2);
+        $mockPaginator->shouldReceive('hasMorePages')->andReturn(false);
+        $mockPaginator->shouldReceive('previousPageUrl')->andReturn(null);
+        $mockPaginator->shouldReceive('nextPageUrl')->andReturn(null);
+        $mockPaginator->shouldReceive('url')->with(1)->andReturn('http://localhost/api/v1/products?page=1');
+
         $this->mockProductRepository
-            ->shouldReceive('list')
+            ->shouldReceive('listPaginated')
             ->once()
-            ->andReturn($products);
+            ->with(15)
+            ->andReturn($mockPaginator);
+
+        $request = new Request(['per_page' => 15]);
 
         // Act
-        $response = $this->controller->index();
+        $response = $this->controller->index($request);
 
         // Assert
         $this->assertInstanceOf(JsonResponse::class, $response);
         $this->assertEquals(200, $response->getStatusCode());
         
         $responseData = $response->getData(true);
-        $this->assertArrayHasKey('products', $responseData);
-        $this->assertArrayHasKey('count', $responseData);
-        $this->assertEquals(2, $responseData['count']);
-        $this->assertCount(2, $responseData['products']);
+        $this->assertArrayHasKey('data', $responseData);
+        $this->assertArrayHasKey('pagination', $responseData);
+        $this->assertArrayHasKey('links', $responseData);
+        $this->assertCount(2, $responseData['data']);
+        $this->assertEquals(2, $responseData['pagination']['total']);
     }
 
     #[Test]
@@ -76,23 +95,39 @@ class ProductControllerTest extends TestCase
         // Arrange
         $emptyProducts = collect([]);
 
+        $mockPaginator = Mockery::mock(LengthAwarePaginator::class);
+        $mockPaginator->shouldReceive('items')->andReturn([]);
+        $mockPaginator->shouldReceive('currentPage')->andReturn(1);
+        $mockPaginator->shouldReceive('perPage')->andReturn(15);
+        $mockPaginator->shouldReceive('total')->andReturn(0);
+        $mockPaginator->shouldReceive('lastPage')->andReturn(1);
+        $mockPaginator->shouldReceive('firstItem')->andReturn(null);
+        $mockPaginator->shouldReceive('lastItem')->andReturn(null);
+        $mockPaginator->shouldReceive('hasMorePages')->andReturn(false);
+        $mockPaginator->shouldReceive('previousPageUrl')->andReturn(null);
+        $mockPaginator->shouldReceive('nextPageUrl')->andReturn(null);
+        $mockPaginator->shouldReceive('url')->with(1)->andReturn('http://localhost/api/v1/products?page=1');
+
         $this->mockProductRepository
-            ->shouldReceive('list')
+            ->shouldReceive('listPaginated')
             ->once()
-            ->andReturn($emptyProducts);
+            ->with(15)
+            ->andReturn($mockPaginator);
+
+        $request = new Request();
 
         // Act
-        $response = $this->controller->index();
+        $response = $this->controller->index($request);
 
         // Assert
         $this->assertInstanceOf(JsonResponse::class, $response);
         $this->assertEquals(200, $response->getStatusCode());
         
         $responseData = $response->getData(true);
-        $this->assertArrayHasKey('products', $responseData);
-        $this->assertArrayHasKey('count', $responseData);
-        $this->assertEquals(0, $responseData['count']);
-        $this->assertEmpty($responseData['products']);
+        $this->assertArrayHasKey('data', $responseData);
+        $this->assertArrayHasKey('pagination', $responseData);
+        $this->assertEquals(0, $responseData['pagination']['total']);
+        $this->assertEmpty($responseData['data']);
     }
 
     #[Test]
@@ -111,23 +146,40 @@ class ProductControllerTest extends TestCase
             ],
         ]);
 
+        $mockPaginator = Mockery::mock(LengthAwarePaginator::class);
+        $mockPaginator->shouldReceive('items')->andReturn($products->toArray());
+        $mockPaginator->shouldReceive('currentPage')->andReturn(1);
+        $mockPaginator->shouldReceive('perPage')->andReturn(15);
+        $mockPaginator->shouldReceive('total')->andReturn(1);
+        $mockPaginator->shouldReceive('lastPage')->andReturn(1);
+        $mockPaginator->shouldReceive('firstItem')->andReturn(1);
+        $mockPaginator->shouldReceive('lastItem')->andReturn(1);
+        $mockPaginator->shouldReceive('hasMorePages')->andReturn(false);
+        $mockPaginator->shouldReceive('previousPageUrl')->andReturn(null);
+        $mockPaginator->shouldReceive('nextPageUrl')->andReturn(null);
+        $mockPaginator->shouldReceive('url')->with(1)->andReturn('http://localhost/api/v1/products?page=1');
+
         $this->mockProductRepository
-            ->shouldReceive('list')
+            ->shouldReceive('listPaginated')
             ->once()
-            ->andReturn($products);
+            ->with(15)
+            ->andReturn($mockPaginator);
+
+        $request = new Request();
 
         // Act
-        $response = $this->controller->index();
+        $response = $this->controller->index($request);
 
         // Assert
         $responseData = $response->getData(true);
         
         // Validate overall structure
-        $this->assertArrayHasKey('products', $responseData);
-        $this->assertArrayHasKey('count', $responseData);
+        $this->assertArrayHasKey('data', $responseData);
+        $this->assertArrayHasKey('pagination', $responseData);
+        $this->assertArrayHasKey('links', $responseData);
         
         // Validate product structure
-        $product = $responseData['products'][0];
+        $product = $responseData['data'][0];
         $this->assertArrayHasKey('id', $product);
         $this->assertArrayHasKey('shopify_id', $product);
         $this->assertArrayHasKey('title', $product);
@@ -144,12 +196,14 @@ class ProductControllerTest extends TestCase
         $exceptionMessage = 'Database connection failed';
         
         $this->mockProductRepository
-            ->shouldReceive('list')
+            ->shouldReceive('listPaginated')
             ->once()
             ->andThrow(new \Exception($exceptionMessage));
 
+        $request = new Request();
+
         // Act
-        $response = $this->controller->index();
+        $response = $this->controller->index($request);
 
         // Assert
         $this->assertInstanceOf(JsonResponse::class, $response);

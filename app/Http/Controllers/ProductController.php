@@ -19,18 +19,45 @@ class ProductController extends Controller
     }
 
     /**
-     * List all products
+     * List all products with pagination
      *
+     * @param Request $request
      * @return JsonResponse
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         try {
-            $products = $this->productRepository->list();
+            // Get the per_page parameter from the request, default to 10
+            $perPage = (int) $request->get('per_page', 10);
+            
+            // Validate per_page parameter (between 1 and 100)
+            if ($perPage < 1) {
+                $perPage = 10;
+            } elseif ($perPage > 100) {
+                $perPage = 100;
+            }
+            
+            $products = $this->productRepository->listPaginated($perPage);
             
             return response()->json([
-                'products' => $products,
-                'count' => $products->count()
+                'data' => $products->items(),
+                'pagination' => [
+                    'current_page' => $products->currentPage(),
+                    'per_page' => $products->perPage(),
+                    'total' => $products->total(),
+                    'last_page' => $products->lastPage(),
+                    'from' => $products->firstItem(),
+                    'to' => $products->lastItem(),
+                    'has_more_pages' => $products->hasMorePages(),
+                    'prev_page_url' => $products->previousPageUrl(),
+                    'next_page_url' => $products->nextPageUrl(),
+                ],
+                'links' => [
+                    'first' => $products->url(1),
+                    'last' => $products->url($products->lastPage()),
+                    'prev' => $products->previousPageUrl(),
+                    'next' => $products->nextPageUrl(),
+                ]
             ]);
         } catch (\Exception $e) {
             return response()->json([

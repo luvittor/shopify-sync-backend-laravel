@@ -51,7 +51,7 @@ class ProductControllerIntegrationTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonStructure([
-                'products' => [
+                'data' => [
                     '*' => [
                         'id',
                         'shopify_id',
@@ -62,11 +62,29 @@ class ProductControllerIntegrationTest extends TestCase
                         'updated_at'
                     ]
                 ],
-                'count'
+                'pagination' => [
+                    'current_page',
+                    'per_page',
+                    'total',
+                    'last_page',
+                    'from',
+                    'to',
+                    'has_more_pages',
+                    'prev_page_url',
+                    'next_page_url'
+                ],
+                'links' => [
+                    'first',
+                    'last',
+                    'prev',
+                    'next'
+                ]
             ])
-            ->assertJsonCount(2, 'products')
+            ->assertJsonCount(2, 'data')
             ->assertJson([
-                'count' => 2
+                'pagination' => [
+                    'total' => 2
+                ]
             ]);
     }
 
@@ -77,8 +95,10 @@ class ProductControllerIntegrationTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJson([
-                'products' => [],
-                'count' => 0
+                'data' => [],
+                'pagination' => [
+                    'total' => 0
+                ]
             ]);
     }
 
@@ -167,12 +187,20 @@ class ProductControllerIntegrationTest extends TestCase
     {
         // Create custom repository that we can track
         $productRepository = new class extends ProductRepository {
-            public bool $listCalled = false;
+            public bool $listPaginatedCalled = false;
 
-            public function list(): \Illuminate\Support\Collection
+            public function listPaginated(int $perPage = 15): \Illuminate\Pagination\LengthAwarePaginator
             {
-                $this->listCalled = true;
-                return collect([]);
+                $this->listPaginatedCalled = true;
+                
+                // Create a mock paginator for testing
+                return new \Illuminate\Pagination\LengthAwarePaginator(
+                    [],  // items
+                    0,   // total
+                    $perPage, // perPage  
+                    1,   // currentPage
+                    ['path' => request()->url(), 'pageName' => 'page']
+                );
             }
         };
 
@@ -184,7 +212,7 @@ class ProductControllerIntegrationTest extends TestCase
 
         // Verify the injected repository was used
         $response->assertStatus(200);
-        $this->assertTrue($productRepository->listCalled);
+        $this->assertTrue($productRepository->listPaginatedCalled);
     }
 
     #[Test]
@@ -193,7 +221,7 @@ class ProductControllerIntegrationTest extends TestCase
         // Test products endpoint response format
         $productsResponse = $this->getJson('/api/v1/products');
         $productsResponse->assertStatus(200)
-            ->assertJsonStructure(['products', 'count']);
+            ->assertJsonStructure(['data', 'pagination', 'links']);
 
         // Create a mock service for sync endpoint
         $mockService = $this->createMock(ShopifyService::class);

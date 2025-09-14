@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Models\Product;
 use Illuminate\Support\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class ProductRepository
 {
@@ -26,15 +27,16 @@ class ProductRepository
     }
 
     /**
-     * List all products ordered by id desc with minimal fields
+     * List paginated products ordered by id desc with minimal fields with pagination
      *
-     * @return Collection
+     * @param int $perPage
+     * @return LengthAwarePaginator
      */
-    public function list(): Collection
+    public function listPaginated(int $perPage = 10): LengthAwarePaginator
     {
         return Product::orderByDesc('id')
             ->select('id', 'shopify_id', 'title', 'price', 'stock', 'created_at', 'updated_at')
-            ->get();
+            ->paginate($perPage);
     }
 
     /**

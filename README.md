@@ -19,7 +19,7 @@ Tests don’t need Shopify and simulate the API.
 ## Features
 
 * Product synchronization from remote (Shopify) to local database
-* List local products
+* List local products with pagination
 * Clear local products
 
 ## Installation
@@ -27,7 +27,6 @@ Tests don’t need Shopify and simulate the API.
 1. Clone the repository
 2. Run `composer install`
 3. Copy `.env.example` to `.env` and fill in Shopify credentials:
-
    * `SHOPIFY_SHOP` – Your Shopify store subdomain (without `.myshopify.com`)
    * `SHOPIFY_ACCESS_TOKEN` – Your Shopify Admin API access token
    * `SHOPIFY_API_VERSION` – Shopify API version (default: 2025-07)
@@ -65,6 +64,8 @@ Run with:
 ```bash
 php artisan test
 ```
+
+Tests are run automatically in CI/CD pipelines in GitHub Actions.
 
 ## Frontend
 
