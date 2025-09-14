@@ -12,7 +12,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{baseURL}}/api/v1/products",
+					"raw": "{{baseURL}}/api/v1/products?page=1&per_page=10",
 					"host": [
 						"{{baseURL}}"
 					],
@@ -20,6 +20,16 @@
 						"api",
 						"v1",
 						"products"
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "1"
+						},
+						{
+							"key": "per_page",
+							"value": "10"
+						}
 					]
 				}
 			},
