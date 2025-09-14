@@ -54,6 +54,20 @@ php artisan cache:clear
 * **POST** `/api/v1/products/sync` – Synchronize products from Shopify to local database
 * **DELETE** `/api/v1/products/clear` – Clear all local products
 
+## CLI Commands
+
+### Shopify Sync Command
+
+You can also synchronize products using the Artisan command line interface:
+
+```bash
+php artisan shopify:sync
+```
+
+**Additional options:**
+* `-v, --verbose` – Show detailed error information if sync fails
+* `-q, --quiet` – Suppress all output except errors
+
 ## Database Schema
 
 | Column       | Type            | Description                            |
