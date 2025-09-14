@@ -6,7 +6,7 @@
 
 A Laravel backend service to synchronize products from Shopify.
 
-This project was developed as part of a **technical assessment**: synchronize Shopify products using **Laravel** for the backend and **Vue.js** for the frontend (visit here: [shopify-sync-frontend-vue](https://github.com/luvittor/shopify-sync-frontend-vue)).
+This project was developed as part of a **technical assessment**: synchronize Shopify products using **Laravel** for the backend and **Vue.js** for the frontend (visit the repo here: [shopify-sync-frontend-vue](https://github.com/luvittor/shopify-sync-frontend-vue)).
 
 Tests don’t need Shopify and simulate the API.
 
@@ -68,11 +68,6 @@ php artisan test
 
 Tests are run automatically in CI/CD pipelines in GitHub Actions.
 
-## Frontend
-
-The Vue.js frontend for this assessment is implemented in a **separate repository**.
-It consumes this backend API for synchronization and product listing.
-
 ## Architecture Decisions
 
 I considered applying CQRS/DDD, but kept the project intentionally **simple and clear**.
@@ -84,6 +79,6 @@ I considered applying CQRS/DDD, but kept the project intentionally **simple and 
 
 ## Credits
 
-Developed by **Luciano Vettoretti**
+Created for technical assessment by **Luciano Vettoretti**.
 
 * [LinkedIn](https://www.linkedin.com/in/luvittor/)
