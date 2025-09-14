@@ -341,28 +341,62 @@ class ShopifyServiceTest extends TestCase
     #[Test]
     public function it_validates_shopify_credentials_in_constructor()
     {
-        // This test validates that the ShopifyService constructor 
-        // properly checks for required environment variables.
-        // Since env() behavior is complex in tests, we verify the service
-        // works when credentials are available (indicating the validation logic exists).
-        
-        // Arrange - Ensure test environment has the required variables
-        $_ENV['SHOPIFY_SHOP'] = $_ENV['SHOPIFY_SHOP'] ?? 'test-shop.myshopify.com';
-        $_ENV['SHOPIFY_ACCESS_TOKEN'] = $_ENV['SHOPIFY_ACCESS_TOKEN'] ?? 'test-token';
-        
-        // Act - Constructor should succeed with valid credentials
+        // Test 1: Constructor should succeed with valid credentials
         $service = new ShopifyService(null, $this->mockProductRepository);
-        
-        // Assert - Service should be created successfully
         $this->assertInstanceOf(ShopifyService::class, $service);
+    }
+
+    #[Test]
+    public function it_throws_exception_when_shop_domain_is_missing()
+    {
+        // Arrange - Temporarily clear the shop configuration
+        config(['services.shopify.shop' => null]);
+        
+        // Act & Assert - Constructor should throw RuntimeException
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Shopify credentials are required. Please set SHOPIFY_SHOP and SHOPIFY_ACCESS_TOKEN environment variables.');
+        
+        new ShopifyService(null, $this->mockProductRepository);
+    }
+
+    #[Test]
+    public function it_throws_exception_when_access_token_is_missing()
+    {
+        // Arrange - Temporarily clear the access token configuration
+        config(['services.shopify.access_token' => null]);
+        
+        // Act & Assert - Constructor should throw RuntimeException
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Shopify credentials are required. Please set SHOPIFY_SHOP and SHOPIFY_ACCESS_TOKEN environment variables.');
+        
+        new ShopifyService(null, $this->mockProductRepository);
+    }
+
+    #[Test]
+    public function it_throws_exception_when_both_credentials_are_missing()
+    {
+        // Arrange - Temporarily clear both configurations
+        config([
+            'services.shopify.shop' => null,
+            'services.shopify.access_token' => null
+        ]);
+        
+        // Act & Assert - Constructor should throw RuntimeException
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Shopify credentials are required. Please set SHOPIFY_SHOP and SHOPIFY_ACCESS_TOKEN environment variables.');
+        
+        new ShopifyService(null, $this->mockProductRepository);
     }
 
     #[Test]
     public function it_configures_http_client_with_correct_headers()
     {
-        // Arrange
-        $_ENV['SHOPIFY_SHOP'] = 'test-shop.myshopify.com';
-        $_ENV['SHOPIFY_ACCESS_TOKEN'] = 'test-access-token';
+        // Arrange - Ensure we have test credentials configured
+        // (these are already set in phpunit.xml, but we can override if needed)
+        config([
+            'services.shopify.shop' => 'test-shop',
+            'services.shopify.access_token' => 'test-access-token'
+        ]);
         
         // Create a mock response to trigger HTTP request and inspect headers
         $mockResponse = json_encode(['products' => []]);

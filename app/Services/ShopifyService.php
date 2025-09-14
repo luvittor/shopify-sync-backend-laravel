@@ -21,14 +21,19 @@ class ShopifyService
      */
     public function __construct(?Client $httpClient = null, ?ProductRepository $productRepository = null)
     {
-        // Get Shopify credentials from environment
-        $this->shopDomain = env('SHOPIFY_SHOP');
-        $this->accessToken = env('SHOPIFY_ACCESS_TOKEN');
-        $this->apiVersion = env('SHOPIFY_API_VERSION', '2025-07');
+        // Get Shopify credentials from configuration (works with config:cache)
+        $shopDomain = config('services.shopify.shop');
+        $accessToken = config('services.shopify.access_token');
+        $apiVersion = config('services.shopify.api_version', '2025-07');
         
-        if (!$this->shopDomain || !$this->accessToken) {
+        if (!$shopDomain || !$accessToken) {
             throw new \RuntimeException('Shopify credentials are required. Please set SHOPIFY_SHOP and SHOPIFY_ACCESS_TOKEN environment variables.');
         }
+
+        // Assign to typed properties only after validation
+        $this->shopDomain = $shopDomain;
+        $this->accessToken = $accessToken;
+        $this->apiVersion = $apiVersion;
 
         // Initialize HTTP client with default headers and timeout if not provided
         $this->httpClient = $httpClient ?? new Client([
