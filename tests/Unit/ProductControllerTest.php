@@ -3,8 +3,7 @@
 namespace Tests\Unit;
 
 use App\Http\Controllers\ProductController;
-use App\Repositories\ProductRepository;
-use App\Services\ShopifyService;
+use App\Services\ProductService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -15,17 +14,15 @@ use Tests\TestCase;
 class ProductControllerTest extends TestCase
 {
 
-    private $mockProductRepository;
-    private $mockShopifyService;
+    private $mockProductService;
     private ProductController $controller;
 
     protected function setUp(): void
     {
         parent::setUp();
-        
-        $this->mockProductRepository = Mockery::mock(ProductRepository::class);
-        $this->mockShopifyService = Mockery::mock(ShopifyService::class);
-        $this->controller = new ProductController($this->mockProductRepository, $this->mockShopifyService);
+
+        $this->mockProductService = Mockery::mock(ProductService::class);
+        $this->controller = new ProductController($this->mockProductService);
     }
 
     protected function tearDown(): void
@@ -62,7 +59,7 @@ class ProductControllerTest extends TestCase
         $mockPaginator->shouldReceive('nextPageUrl')->andReturn(null);
         $mockPaginator->shouldReceive('url')->with(1)->andReturn('http://localhost/api/v1/products?page=1');
 
-        $this->mockProductRepository
+        $this->mockProductService
             ->shouldReceive('listPaginated')
             ->once()
             ->with(15)
@@ -102,7 +99,7 @@ class ProductControllerTest extends TestCase
         $mockPaginator->shouldReceive('nextPageUrl')->andReturn(null);
         $mockPaginator->shouldReceive('url')->andReturn('http://localhost/api/v1/products?page=1');
 
-        $this->mockProductRepository
+        $this->mockProductService
             ->shouldReceive('listPaginated')
             ->once()
             ->with(10)  // Default per_page is 10, not 15
@@ -153,7 +150,7 @@ class ProductControllerTest extends TestCase
         $mockPaginator->shouldReceive('nextPageUrl')->andReturn(null);
         $mockPaginator->shouldReceive('url')->andReturn('http://localhost/api/v1/products?page=1');
 
-        $this->mockProductRepository
+        $this->mockProductService
             ->shouldReceive('listPaginated')
             ->once()
             ->with(10)  // Default per_page is 10, not 15
@@ -189,7 +186,7 @@ class ProductControllerTest extends TestCase
         // Arrange
         $exceptionMessage = 'Database connection failed';
         
-        $this->mockProductRepository
+        $this->mockProductService
             ->shouldReceive('listPaginated')
             ->once()
             ->andThrow(new \Exception($exceptionMessage));
@@ -220,8 +217,8 @@ class ProductControllerTest extends TestCase
             'total' => 6
         ];
 
-        $this->mockShopifyService
-            ->shouldReceive('sync')
+        $this->mockProductService
+            ->shouldReceive('syncFromShopify')
             ->once()
             ->andReturn($syncResult);
 
@@ -245,8 +242,8 @@ class ProductControllerTest extends TestCase
         // Arrange
         $exceptionMessage = 'Shopify API connection failed';
         
-        $this->mockShopifyService
-            ->shouldReceive('sync')
+        $this->mockProductService
+            ->shouldReceive('syncFromShopify')
             ->once()
             ->andThrow(new \Exception($exceptionMessage));
 
@@ -268,8 +265,8 @@ class ProductControllerTest extends TestCase
     public function sync_has_correct_error_json_structure()
     {
         // Arrange
-        $this->mockShopifyService
-            ->shouldReceive('sync')
+        $this->mockProductService
+            ->shouldReceive('syncFromShopify')
             ->once()
             ->andThrow(new \Exception('Test error'));
 
@@ -289,8 +286,8 @@ class ProductControllerTest extends TestCase
     public function sync_handles_runtime_exception()
     {
         // Arrange
-        $this->mockShopifyService
-            ->shouldReceive('sync')
+        $this->mockProductService
+            ->shouldReceive('syncFromShopify')
             ->once()
             ->andThrow(new \RuntimeException('Configuration error'));
 
@@ -315,8 +312,8 @@ class ProductControllerTest extends TestCase
             'total' => 0
         ];
 
-        $this->mockShopifyService
-            ->shouldReceive('sync')
+        $this->mockProductService
+            ->shouldReceive('syncFromShopify')
             ->once()
             ->andReturn($syncResult);
 
@@ -338,7 +335,7 @@ class ProductControllerTest extends TestCase
         // Arrange
         $clearedCount = 5;
 
-        $this->mockProductRepository
+        $this->mockProductService
             ->shouldReceive('clear')
             ->once()
             ->andReturn($clearedCount);
@@ -363,7 +360,7 @@ class ProductControllerTest extends TestCase
         // Arrange
         $clearedCount = 0;
 
-        $this->mockProductRepository
+        $this->mockProductService
             ->shouldReceive('clear')
             ->once()
             ->andReturn($clearedCount);
@@ -385,7 +382,7 @@ class ProductControllerTest extends TestCase
         // Arrange
         $exceptionMessage = 'Database connection failed';
         
-        $this->mockProductRepository
+        $this->mockProductService
             ->shouldReceive('clear')
             ->once()
             ->andThrow(new \Exception($exceptionMessage));
@@ -408,7 +405,7 @@ class ProductControllerTest extends TestCase
     public function clear_has_correct_json_structure()
     {
         // Arrange
-        $this->mockProductRepository
+        $this->mockProductService
             ->shouldReceive('clear')
             ->once()
             ->andReturn(3);
@@ -442,7 +439,7 @@ class ProductControllerTest extends TestCase
         $mockPaginator->shouldReceive('nextPageUrl')->andReturn(null);
         $mockPaginator->shouldReceive('url')->andReturn('http://localhost/api/v1/products?page=1');
 
-        $this->mockProductRepository
+        $this->mockProductService
             ->shouldReceive('listPaginated')
             ->with(10) // Should be corrected to 10, not the invalid value
             ->once()
@@ -478,7 +475,7 @@ class ProductControllerTest extends TestCase
         $mockPaginator->shouldReceive('nextPageUrl')->andReturn(null);
         $mockPaginator->shouldReceive('url')->andReturn('http://localhost/api/v1/products?page=1');
 
-        $this->mockProductRepository
+        $this->mockProductService
             ->shouldReceive('listPaginated')
             ->with(100) // Should be capped at 100, not the invalid value
             ->once()
@@ -514,7 +511,7 @@ class ProductControllerTest extends TestCase
         $mockPaginator->shouldReceive('nextPageUrl')->andReturn(null);
         $mockPaginator->shouldReceive('url')->andReturn('http://localhost/api/v1/products?page=1');
 
-        $this->mockProductRepository
+        $this->mockProductService
             ->shouldReceive('listPaginated')
             ->with(10) // Should be corrected to 10, not 0
             ->once()
@@ -550,7 +547,7 @@ class ProductControllerTest extends TestCase
         $mockPaginator->shouldReceive('nextPageUrl')->andReturn(null);
         $mockPaginator->shouldReceive('url')->andReturn('http://localhost/api/v1/products?page=1');
 
-        $this->mockProductRepository
+        $this->mockProductService
             ->shouldReceive('listPaginated')
             ->with(25) // Should use the exact valid value
             ->once()
