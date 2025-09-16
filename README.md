@@ -96,16 +96,25 @@ Tests are run automatically in CI/CD pipelines in GitHub Actions.
 
 ## Architecture Decisions
 
-I considered applying CQRS/DDD, but kept the project intentionally **simple and clear**.
+I considered applying CQRS/DDD patterns, but kept the project intentionally **simple and clear** for this technical assessment, prioritizing readability and maintainability over complex architectural patterns.
 
-* `ProductController` manages product-related HTTP requests.
-* `ShopifyService` handles communication with the Shopify API.
-* `ProductRepository` abstracts database access.
-* `Product` model represents the product entity.
+### Component Responsibilities:
+
+* **`SyncShopifyProducts` Command** - CLI interface that delegates to `ShopifyService` for synchronization
+* **`ProductController`** - Handles HTTP requests and coordinates business operations related to products
+* **`ShopifyService`** - Manages Shopify API communication and orchestrates data synchronization
+* **`ProductRepository`** - Abstracts database operations and provides a clean data access layer
+* **`Product` Model** - Represents the product entity with Eloquent ORM features
+
+### Data Flow:
+1. HTTP requests → `ProductController` → `ShopifyService` → `ProductRepository` → `Product` Model
+2. CLI commands → `SyncShopifyProducts` → `ShopifyService` → `ProductRepository` → `Product` Model
+
+This layered approach separates concerns while maintaining simplicity, making the codebase easy to understand and extend.
 
 ### GitHub Actions
 
-A GitHub Actions workflows are included to deploy, test and audit the application:
+GitHub Actions workflows are included to deploy, test and audit the application:
 * [audit.yml](.github/workflows/audit.yml)
 * [deploy.yml](.github/workflows/deploy.yml)
 * [tests.yml](.github/workflows/tests.yml)
