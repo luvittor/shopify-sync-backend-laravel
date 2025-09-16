@@ -100,18 +100,16 @@ I considered applying CQRS/DDD patterns, but kept the project intentionally **si
 
 ### Component Responsibilities
 
-* **`SyncShopifyProducts` Command** - CLI interface that delegates to `ShopifyService` for synchronization
-* **`ProductController`** - Handles HTTP requests and coordinates business operations related to products
-* **`ShopifyService`** - Manages Shopify API communication and orchestrates data synchronization
-* **`ProductRepository`** - Abstracts database operations and provides a clean data access layer
-* **`Product` Model** - Represents the product entity with Eloquent ORM features
+* **`SyncShopifyProducts` Command** – CLI entry point that triggers and coordinates product synchronization
+* **`ProductController`** – Handles HTTP requests and delegates product-related business operations
+* **`ShopifyService`** – Orchestrates synchronization logic and manages communication with the Shopify API
+* **`ProductRepository`** – Encapsulates database operations and provides a clean, testable data access layer
+* **`Product` Model** – Represents the product entity using Eloquent ORM features
 
 ### Data Flow
 
-1. HTTP requests → `ProductController` → `ShopifyService` → `ProductRepository` → `Product` Model
-2. CLI commands → `SyncShopifyProducts` → `ShopifyService` → `ProductRepository` → `Product` Model
-
-This layered approach separates concerns while maintaining simplicity, making the codebase easy to understand and extend.
+1. **HTTP entry** → `ProductController` → `ShopifyService` → `ProductRepository` → `Product` Model
+2. **CLI entry** → `SyncShopifyProducts` → `ShopifyService` → `ProductRepository` → `Product` Model
 
 ### GitHub Actions
 
