@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Product;
 use App\Repositories\ProductRepository;
+use App\Services\ProductService;
 use App\Services\ShopifyService;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
@@ -125,13 +126,13 @@ class ProductControllerIntegrationTest extends TestCase
         $handlerStack = HandlerStack::create($mock);
         $client = new Client(['handler' => $handlerStack]);
 
-        // Create service with mocked HTTP client
+        // Create services with mocked dependencies
         $shopifyService = new ShopifyService($client);
         $productRepository = new ProductRepository();
+        $productService = new ProductService($productRepository, $shopifyService);
 
-        // Bind the mocked service to the container
-        $this->app->instance(ShopifyService::class, $shopifyService);
-        $this->app->instance(ProductRepository::class, $productRepository);
+        // Bind the service to the container
+        $this->app->instance(ProductService::class, $productService);
 
         // Make request to sync endpoint
         $response = $this->postJson('/api/v1/products/sync');
@@ -201,13 +202,13 @@ class ProductControllerIntegrationTest extends TestCase
         $handlerStack = HandlerStack::create($mock);
         $client = new Client(['handler' => $handlerStack]);
 
-        // Create service with mocked HTTP client
+        // Create services with mocked dependencies
         $shopifyService = new ShopifyService($client);
         $productRepository = new ProductRepository();
+        $productService = new ProductService($productRepository, $shopifyService);
 
-        // Bind the mocked service to the container
-        $this->app->instance(ShopifyService::class, $shopifyService);
-        $this->app->instance(ProductRepository::class, $productRepository);
+        // Bind the service to the container
+        $this->app->instance(ProductService::class, $productService);
 
         // Make request to sync endpoint
         $response = $this->postJson('/api/v1/products/sync');
@@ -233,12 +234,12 @@ class ProductControllerIntegrationTest extends TestCase
     public function sync_endpoint_handles_service_errors_gracefully()
     {
         // Create a service that will throw an exception
-        $mockService = $this->createMock(ShopifyService::class);
-        $mockService->method('sync')
+        $mockService = $this->createMock(ProductService::class);
+        $mockService->method('syncFromShopify')
             ->willThrowException(new \Exception('Shopify API is down'));
 
         // Bind the service to the container
-        $this->app->instance(ShopifyService::class, $mockService);
+        $this->app->instance(ProductService::class, $mockService);
 
         // Make request to sync endpoint
         $response = $this->postJson('/api/v1/products/sync');
@@ -257,34 +258,47 @@ class ProductControllerIntegrationTest extends TestCase
     #[Test]
     public function controller_uses_injected_dependencies()
     {
-        // Create custom repository that we can track
-        $productRepository = new class extends ProductRepository {
+        $productService = new class extends ProductService {
             public bool $listPaginatedCalled = false;
+
+            public function __construct()
+            {
+            }
 
             public function listPaginated(int $perPage = 15): \Illuminate\Pagination\LengthAwarePaginator
             {
                 $this->listPaginatedCalled = true;
-                
-                // Create a mock paginator for testing
+
                 return new \Illuminate\Pagination\LengthAwarePaginator(
-                    [],  // items
-                    0,   // total
-                    $perPage, // perPage  
-                    1,   // currentPage
+                    [],
+                    0,
+                    $perPage,
+                    1,
                     ['path' => request()->url(), 'pageName' => 'page']
                 );
             }
+
+            public function clear(): int
+            {
+                return 0;
+            }
+
+            public function syncFromShopify(): array
+            {
+                return [
+                    'synced' => 0,
+                    'skipped' => 0,
+                    'total' => 0,
+                ];
+            }
         };
 
-        // Bind to container
-        $this->app->instance(ProductRepository::class, $productRepository);
+        $this->app->instance(ProductService::class, $productService);
 
-        // Make request
         $response = $this->getJson('/api/v1/products');
 
-        // Verify the injected repository was used
         $response->assertStatus(200);
-        $this->assertTrue($productRepository->listPaginatedCalled);
+        $this->assertTrue($productService->listPaginatedCalled);
     }
 
     #[Test]
@@ -296,14 +310,14 @@ class ProductControllerIntegrationTest extends TestCase
             ->assertJsonStructure(['data', 'pagination', 'links']);
 
         // Create a mock service for sync endpoint
-        $mockService = $this->createMock(ShopifyService::class);
-        $mockService->method('sync')->willReturn([
+        $mockService = $this->createMock(ProductService::class);
+        $mockService->method('syncFromShopify')->willReturn([
             'synced' => 0,
             'skipped' => 0,
             'total' => 0
         ]);
 
-        $this->app->instance(ShopifyService::class, $mockService);
+        $this->app->instance(ProductService::class, $mockService);
 
         // Test sync endpoint response format
         $syncResponse = $this->postJson('/api/v1/products/sync');

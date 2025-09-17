@@ -2,20 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Repositories\ProductRepository;
-use App\Services\ShopifyService;
+use App\Services\ProductService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
-    private ProductRepository $productRepository;
-    private ShopifyService $shopifyService;
-
-    public function __construct(ProductRepository $productRepository, ShopifyService $shopifyService)
+    public function __construct(private ProductService $productService)
     {
-        $this->productRepository = $productRepository;
-        $this->shopifyService = $shopifyService;
     }
 
     /**
@@ -37,7 +31,7 @@ class ProductController extends Controller
                 $perPage = 100;
             }
             
-            $products = $this->productRepository->listPaginated($perPage);
+            $products = $this->productService->listPaginated($perPage);
             
             return response()->json([
                 'data' => $products->items(),
@@ -75,7 +69,7 @@ class ProductController extends Controller
     public function sync(): JsonResponse
     {
         try {
-            $result = $this->shopifyService->sync();
+            $result = $this->productService->syncFromShopify();
             
             return response()->json($result);
         } catch (\Exception $e) {
@@ -94,7 +88,7 @@ class ProductController extends Controller
     public function clear(): JsonResponse
     {
         try {
-            $count = $this->productRepository->clear();
+            $count = $this->productService->clear();
             
             return response()->json([
                 'message' => 'All products cleared successfully',
