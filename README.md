@@ -8,7 +8,7 @@ A Laravel backend service to synchronize products from Shopify.
 
 This project was developed as part of a **technical assessment**: synchronize Shopify products using **Laravel** for the backend and **Vue.js** for the frontend (visit the repo here: [shopify-sync-frontend-vue](https://github.com/luvittor/shopify-sync-frontend-vue)).
 
-Tests don’t need Shopify and simulate the API.
+Tests run against mocked Shopify responses, so you can work locally without real API credentials.
 
 ## Requirements
 
@@ -19,7 +19,8 @@ Tests don’t need Shopify and simulate the API.
 
 ## Features
 
-* Product synchronization from remote (Shopify) to local database
+* Dedicated `ProductService` orchestrates Shopify imports and repository persistence
+* `ShopifyService` works as a focused API client that fetches product payloads
 * List local products with pagination
 * Clear local products
 
@@ -50,9 +51,9 @@ php artisan cache:clear
 
 ## API Endpoints
 
-* **GET** `/api/v1/products` – List all local products with count
-* **POST** `/api/v1/products/sync` – Synchronize products from Shopify to local database
-* **DELETE** `/api/v1/products/clear` – Clear all local products
+* **GET** `/api/v1/products` – List all local products with count and pagination
+* **POST** `/api/v1/products/sync` – Fetch products from Shopify and upsert them locally
+* **DELETE** `/api/v1/products/clear` – Remove every product from the local catalogue
 
 ## CLI Commands
 
@@ -84,9 +85,9 @@ The `shopify_id` field ensures products can be properly synchronized and updated
 
 ## Testing
 
-Tests simulate Shopify API responses and don’t require real credentials.
+Tests rely on mocked HTTP responses so no Shopify credentials are needed.
 
-Run with:
+Run the whole suite with:
 
 ```bash
 php artisan test
@@ -100,16 +101,17 @@ I considered applying CQRS/DDD patterns, but kept the project intentionally **si
 
 ### Component Responsibilities
 
-* **`SyncShopifyProducts` Command** – CLI entry point that triggers and coordinates product synchronization
-* **`ProductController`** – Handles HTTP requests and delegates product-related business operations
-* **`ShopifyService`** – Orchestrates synchronization logic and manages communication with the Shopify API
-* **`ProductRepository`** – Encapsulates database operations and provides a clean, testable data access layer
-* **`Product` Model** – Represents the product entity using Eloquent ORM features
+* **`ProductService`** – Domain façade that coordinates pagination, clearing, and Shopify sync workflows
+* **`ShopifyService`** – Thin API client responsible solely for fetching products from Shopify
+* **`ProductRepository`** – Encapsulates database reads/writes for the `products` table
+* **`ProductController`** – HTTP entry point delegating work to the `ProductService`
+* **`SyncShopifyProducts` Command** – CLI entry point that calls into the same service layer as the API
+* **`Product` Model** – Eloquent representation of the persisted product rows
 
 ### Data Flow
 
-1. **HTTP entry** → `ProductController` → `ShopifyService` → `ProductRepository` → `Product` Model
-2. **CLI entry** → `SyncShopifyProducts` → `ShopifyService` → `ProductRepository` → `Product` Model
+1. **HTTP entry** → `ProductController` → `ProductService` → (`ShopifyService` ⇄ Shopify API, `ProductRepository`) → `Product` Model
+2. **CLI entry** → `SyncShopifyProducts` → `ProductService` → (`ShopifyService` ⇄ Shopify API, `ProductRepository`) → `Product` Model
 
 ### GitHub Actions
 
