@@ -32,10 +32,18 @@ class ProductService
             $skippedCount = 0;
 
             foreach ($products as $productData) {
-                if ($this->processProduct($productData)) {
-                    $syncedCount++;
-                } else {
+                try {
+                    if ($this->processProduct($productData)) {
+                        $syncedCount++;
+                    } else {
+                        $skippedCount++;
+                    }
+                } catch (\Exception $e) {
                     $skippedCount++;
+                    Log::error('Failed to process product', [
+                        'product' => $productData,
+                        'error' => $e->getMessage(),
+                    ]);
                 }
             }
 

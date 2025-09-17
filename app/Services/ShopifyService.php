@@ -54,16 +54,22 @@ class ShopifyService
         try {
             $url = $this->buildProductsUrl();
 
-            $response = $this->httpClient->get($url, [
-                'headers' => [
-                    'X-Shopify-Access-Token' => $this->accessToken,
-                    'Content-Type' => 'application/json',
-                ]
-            ]);
+            $response = $this->httpClient->get($url);
 
-            $data = json_decode($response->getBody()->getContents(), true);
+            $body = (string) $response->getBody();
+            $data = json_decode($body, true);
+            
+            if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
+                Log::error('Invalid JSON from Shopify API', [
+                    'shop' => $this->shopDomain,
+                    'body_preview' => substr($body, 0, 200),
+                ]);
+                throw new \RuntimeException('Invalid JSON returned from Shopify');
+            }
+            
+            $products = $data['products'] ?? [];
 
-            return $data['products'] ?? [];
+            return is_array($products) ? $products : [];
 
         } catch (RequestException $e) {
             Log::error('Failed to fetch products from Shopify API', [

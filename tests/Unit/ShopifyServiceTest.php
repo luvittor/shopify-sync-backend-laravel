@@ -15,10 +15,6 @@ use Tests\TestCase;
 
 class ShopifyServiceTest extends TestCase
 {
-    private $originalShop;
-    private $originalAccessToken;
-    private $originalApiVersion;
-
     protected function setUp(): void
     {
         parent::setUp();
@@ -133,5 +129,25 @@ class ShopifyServiceTest extends TestCase
         $products = $service->fetchProducts();
 
         $this->assertSame([], $products);
+    }
+
+    #[Test]
+    public function it_throws_exception_for_invalid_json_response()
+    {
+        $mockResponse = 'Invalid JSON String';
+
+        $mock = new MockHandler([
+            new Response(200, [], $mockResponse),
+        ]);
+
+        $handlerStack = HandlerStack::create($mock);
+        $client = new Client(['handler' => $handlerStack]);
+
+        $service = new ShopifyService($client);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Invalid JSON returned from Shopify');
+
+        $service->fetchProducts();
     }
 }
