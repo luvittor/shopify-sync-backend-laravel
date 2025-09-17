@@ -19,8 +19,7 @@ Tests run against mocked Shopify responses, so you can work locally without real
 
 ## Features
 
-* Dedicated `ProductService` orchestrates Shopify imports and repository persistence
-* `ShopifyService` works as a focused API client that fetches product payloads
+* Synchronize products from Shopify API
 * List local products with pagination
 * Clear local products
 
@@ -102,7 +101,7 @@ I considered applying CQRS/DDD patterns, but kept the project intentionally **si
 ### Component Responsibilities
 
 * **`ProductService`** – Domain façade that coordinates pagination, clearing, and Shopify sync workflows
-* **`ShopifyService`** – Thin API client responsible solely for fetching products from Shopify
+* **`ShopifyService`** – Thin API client responsible for fetching products from Shopify with automatic pagination support
 * **`ProductRepository`** – Encapsulates database reads/writes for the `products` table
 * **`ProductController`** – HTTP entry point delegating work to the `ProductService`
 * **`SyncShopifyProducts` Command** – CLI entry point that calls into the same service layer as the API
