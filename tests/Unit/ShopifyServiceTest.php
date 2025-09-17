@@ -23,23 +23,8 @@ class ShopifyServiceTest extends TestCase
     {
         parent::setUp();
 
-        $this->originalShop = config('services.shopify.shop');
-        $this->originalAccessToken = config('services.shopify.access_token');
-        $this->originalApiVersion = config('services.shopify.api_version');
-
         Log::shouldReceive('info')->zeroOrMoreTimes();
         Log::shouldReceive('error')->zeroOrMoreTimes();
-    }
-
-    protected function tearDown(): void
-    {
-        config([
-            'services.shopify.shop' => $this->originalShop,
-            'services.shopify.access_token' => $this->originalAccessToken,
-            'services.shopify.api_version' => $this->originalApiVersion,
-        ]);
-
-        parent::tearDown();
     }
 
     #[Test]
