@@ -344,6 +344,37 @@ class ShopifyServiceTest extends TestCase
     }
 
     #[Test]
+    public function it_does_not_double_encode_page_info_between_pages()
+    {
+        $container = [];
+        $history = \GuzzleHttp\Middleware::history($container);
+
+        // First page returns an encoded page_info in Link header
+        $firstLink = '<https://test-shop.myshopify.com/admin/api/2025-07/products.json?page_info=abc%2Fdef%2Bghi>; rel="next"';
+        $mock = new MockHandler([
+            new Response(200, ['Link' => $firstLink], json_encode(['products' => [['id' => 1]]])),
+            new Response(200, [], json_encode(['products' => [['id' => 2]]])),
+        ]);
+
+        $handlerStack = HandlerStack::create($mock);
+        $handlerStack->push($history);
+        $client = new Client(['handler' => $handlerStack]);
+
+        $service = new ShopifyService($client);
+        $all = $service->fetchAllProducts();
+
+        // Second request should contain page_info=abc%2Fdef%2Bghi (not %252F or %252B)
+        $this->assertCount(2, $all);
+        $this->assertSame('abc%2Fdef%2Bghi', \GuzzleHttp\Psr7\Query::parse(\GuzzleHttp\Psr7\Uri::composeComponents(
+            '',
+            '',
+            '',
+            $container[1]['request']->getUri()->getQuery(),
+            ''
+        ))['page_info'] ?? null);
+    }
+
+    #[Test]
     public function it_handles_limit_parameter_clamping()
     {
         $mockHandler = new MockHandler([

@@ -80,7 +80,7 @@ class ShopifyService
         $options = [
             'query' => array_filter([
                 'limit' => $limit,
-                'page_info' => $pageInfo ? rawurldecode($pageInfo) : null,
+                'page_info' => $pageInfo,
             ]),
         ];
 
