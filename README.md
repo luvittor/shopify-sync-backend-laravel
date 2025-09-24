@@ -3,6 +3,7 @@
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue)](https://www.php.net/)
 [![Laravel](https://img.shields.io/badge/Laravel-12.0-red)](https://laravel.com/)
 [![SQLite](https://img.shields.io/badge/DB-SQLite-lightgrey)](https://www.sqlite.org/)
+[![deepwiki](https://img.shields.io/badge/deepwiki-article-blue)](https://deepwiki.com/luvittor/shopify-sync-backend-laravel)
 
 A Laravel backend service to synchronize products from Shopify.
 
