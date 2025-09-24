@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Services\ShopifyService;
+use App\Services\ProductService;
 use Illuminate\Console\Command;
 
 class SyncShopifyProducts extends Command
@@ -29,11 +29,11 @@ class SyncShopifyProducts extends Command
         $this->info('🔄 Starting Shopify products sync...');
         
         try {
-            $shopifyService = app(ShopifyService::class);
+            $productService = app(ProductService::class);
             
             $this->line('📡 Fetching products from Shopify...');
             
-            $result = $shopifyService->sync();
+            $result = $productService->syncFromShopify();
             
             $this->newLine();
             $this->info('✅ Sync completed successfully!');
