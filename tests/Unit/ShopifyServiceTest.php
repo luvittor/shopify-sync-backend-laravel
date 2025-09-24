@@ -329,8 +329,10 @@ class ShopifyServiceTest extends TestCase
     #[Test]
     public function it_handles_page_info_correctly()
     {
+        $page_info = 'abc123';
+
         $mockHandler = new MockHandler([
-            new Response(200, ['Link' => '<https://example.com?limit=250&page_info=abc123>; rel="next"'], json_encode(['products' => []])),
+            new Response(200, ['Link' => '<https://example.com?limit=250&page_info=' . $page_info . '>; rel="next"'], json_encode(['products' => []])),
             new Response(200, [], json_encode(['products' => []])),
         ]);
 
@@ -338,9 +340,9 @@ class ShopifyServiceTest extends TestCase
         $httpClient = new Client(['handler' => $handlerStack]);
 
         $service = new ShopifyService($httpClient);
-        $service->fetchProductsPage('abc123');
+        $service->fetchProductsPage($page_info);
 
-        $this->assertTrue($mockHandler->getLastRequest()->getUri()->getQuery() === 'limit=250&page_info=abc123');
+        $this->assertSame('limit=250&page_info=' . $page_info, $mockHandler->getLastRequest()->getUri()->getQuery());
     }
 
     #[Test]
@@ -349,8 +351,12 @@ class ShopifyServiceTest extends TestCase
         $container = [];
         $history = \GuzzleHttp\Middleware::history($container);
 
+        // page_info with characters that need encoding
+        $page_info = 'abc/def+ghi';
+        $page_info_encoded = rawurlencode($page_info);
+
         // First page returns an encoded page_info in Link header
-        $firstLink = '<https://test-shop.myshopify.com/admin/api/2025-07/products.json?page_info=abc%2Fdef%2Bghi>; rel="next"';
+        $firstLink = '<https://test-shop.myshopify.com/admin/api/2025-07/products.json?page_info=' . $page_info_encoded . '>; rel="next"';
         $mock = new MockHandler([
             new Response(200, ['Link' => $firstLink], json_encode(['products' => [['id' => 1]]])),
             new Response(200, [], json_encode(['products' => [['id' => 2]]])),
@@ -365,13 +371,10 @@ class ShopifyServiceTest extends TestCase
 
         // Second request should contain page_info=abc%2Fdef%2Bghi (not %252F or %252B)
         $this->assertCount(2, $all);
-        $this->assertSame('abc%2Fdef%2Bghi', \GuzzleHttp\Psr7\Query::parse(\GuzzleHttp\Psr7\Uri::composeComponents(
-            '',
-            '',
-            '',
-            $container[1]['request']->getUri()->getQuery(),
-            ''
-        ))['page_info'] ?? null);
+        $this->assertSame(
+            'limit=250&page_info=' . $page_info_encoded,
+            $container[1]['request']->getUri()->getQuery()
+        );
     }
 
     #[Test]
