@@ -325,4 +325,21 @@ class ShopifyServiceTest extends TestCase
         $this->assertSame([], $products);
         $this->assertNull($nextPageInfo);
     }
+
+    #[Test]
+    public function it_handles_page_info_correctly()
+    {
+        $mockHandler = new MockHandler([
+            new Response(200, ['Link' => '<https://example.com?limit=250&page_info=abc123>; rel="next"'], json_encode(['products' => []])),
+            new Response(200, [], json_encode(['products' => []])),
+        ]);
+
+        $handlerStack = HandlerStack::create($mockHandler);
+        $httpClient = new Client(['handler' => $handlerStack]);
+
+        $service = new ShopifyService($httpClient);
+        $service->fetchProductsPage('abc123');
+
+        $this->assertTrue($mockHandler->getLastRequest()->getUri()->getQuery() === 'limit=250&page_info=abc123');
+    }
 }
