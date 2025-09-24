@@ -75,6 +75,8 @@ class ShopifyService
     public function fetchProductsPage(?string $pageInfo = null, int $limit = 250): array
     {
         $url = $this->buildProductsUrl();
+        $limit = max(1, min(250, $limit));
+
         $options = [
             'query' => array_filter([
                 'limit' => $limit,

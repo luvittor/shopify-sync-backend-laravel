@@ -342,4 +342,31 @@ class ShopifyServiceTest extends TestCase
 
         $this->assertTrue($mockHandler->getLastRequest()->getUri()->getQuery() === 'limit=250&page_info=abc123');
     }
+
+    #[Test]
+    public function it_handles_limit_parameter_clamping()
+    {
+        $mockHandler = new MockHandler([
+            new Response(200, [], json_encode(['products' => []])),
+            new Response(200, [], json_encode(['products' => []])),
+            new Response(200, [], json_encode(['products' => []])),
+        ]);
+
+        $handlerStack = HandlerStack::create($mockHandler);
+        $httpClient = new Client(['handler' => $handlerStack]);
+
+        $service = new ShopifyService($httpClient);
+
+        // Test with limit less than 1
+        $service->fetchProductsPage(null, 0);
+        $this->assertTrue($mockHandler->getLastRequest()->getUri()->getQuery() === 'limit=1');
+
+        // Test with limit greater than 250
+        $service->fetchProductsPage(null, 300);
+        $this->assertTrue($mockHandler->getLastRequest()->getUri()->getQuery() === 'limit=250');
+
+        // Test with valid limit
+        $service->fetchProductsPage(null, 100);
+        $this->assertTrue($mockHandler->getLastRequest()->getUri()->getQuery() === 'limit=100');
+    }
 }
