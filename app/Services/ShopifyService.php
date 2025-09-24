@@ -34,6 +34,7 @@ class ShopifyService
             'headers' => [
                 'X-Shopify-Access-Token' => $this->accessToken,
                 'Content-Type' => 'application/json',
+                'Accept' => 'application/json',
             ],
             'timeout' => 30,
         ]);
